@@ -1,0 +1,58 @@
+# Environment variables and secrets
+.env
+.env.*
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Raw Data
+data/raw/
+
+# Local cache files and databases
+*.sqlite
+.cache/
+.cache.sqlite
+
+# ML training logs and telemetry
+catboost_info/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.log
+*.out
+*.synctex.gz
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.Rhistory
+
+# Ignore all root-level markdown files except README
+/*.md
+!/README.md
+
+# Academic Papers
+/papers/
+/docs/
+
+# Scratch and local experiments
+scratch/
+notebooks/scratch/
