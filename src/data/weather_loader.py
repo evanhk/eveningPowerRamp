@@ -109,7 +109,7 @@ def fetch_yearly_weather(start_year :int, end_year :int,points:pd.DataFrame) -> 
 		
 
 		hourly_data = {
-			"datetime_utc": pd.date_range(
+			"date": pd.date_range(
 				start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
 				end =  pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True),
 				freq = pd.Timedelta(seconds = hourly.Interval()),

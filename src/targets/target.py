@@ -88,5 +88,5 @@ def extract_ramp_targets(day_data):
         "t_start_local": t_start,
         "t_peak_local": t_peak,
         "delta_mw_raw": delta_mw_raw,
-        "total_solar_capacitY_mw": total_solar_capacity_mw,
+        "total_solar_capacity_mw": total_solar_capacity_mw,
     }
