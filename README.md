@@ -112,7 +112,7 @@ The models were evaluated against an untouched **2026 out-of-sample holdout set*
 Clone the repository and install dependencies in an isolated virtual environment:
 
 ```powershell
-git clone https://github.com/<your-username>/energy-systems-analysis.git
+git clone https://github.com/evanhk/energy-systems-analysis.git
 cd energy-systems-analysis
 python -m venv .venv
 .venv\Scripts\activate
