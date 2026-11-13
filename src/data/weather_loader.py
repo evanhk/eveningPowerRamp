@@ -7,7 +7,6 @@ import os
 import time
 import warnings
 import fsspec
-from herbie import Herbie
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -109,7 +108,7 @@ def fetch_yearly_weather(start_year :int, end_year :int,points:pd.DataFrame) -> 
 		
 
 		hourly_data = {
-			"datetime_utc": pd.date_range(
+			"date": pd.date_range(
 				start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
 				end =  pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True),
 				freq = pd.Timedelta(seconds = hourly.Interval()),
@@ -175,7 +174,7 @@ def fetch_single_day_zarr(date_str: str) -> pd.DataFrame:
     for col_name, subpath in ZARR_VARIABLES.items():
         url = f"s3://hrrrzarr/sfc/{date_path}/{run_str}/{subpath}"
         mapper = fsspec.get_mapper(url, anon=True)
-        ds = xr.open_zarr(mapper)
+        ds = xr.open_zarr(mapper, consolidated = False)
         var_key = list(ds.data_vars)[0]
 
         # Slice f01-f09 (time 0:9) and 4 station coordinates
@@ -280,7 +279,7 @@ def _fetch_single_hour_herbie(
   """Worker: Fetch DSWRF & VBDSF for 1 forecast hour with retry logic."""
   for attempt in range(max_retries):
     try:
-      H = Herbie(
+      H = herbie.Herbie(
           noon_utc, model="hrrr", product="sfc", fxx=fxx, verbose=False
       )
       ds = H.xarray(":(?:DSWRF|VBDSF):surface:", overwrite=True)
@@ -344,6 +343,31 @@ def _update_and_save_solar_checkpoint(
   updated_df["vbdsf"] = updated_df["vbdsf"].astype(np.float32)
   updated_df.to_parquet(parquet_path, index=False)
   return updated_df
+
+def benchmark_herbie_day(date, points_df = STATION_POINTS) -> pd.DataFrame:
+    """Benchmark baseline: sequentially extracts 9 forecast lead hours for 4 stations via Herbie GRIB2."""
+    run_utc = get_noon_utc(date).tz_localize(None)
+    SEARCH_ATMOSPHERE = (
+        ":(TMP|DPT):2 m above ground|"
+        ":(UGRD|VGRD):10 m above ground|"
+        ":GUST:surface|"
+        ":(LCDC|MCDC|HCDC):|"
+        ":TCDC:entire atmosphere"
+    )
+    herbie_rows = []
+    for fxx in range(1, 10):
+        H = herbie.Herbie(run_utc, model="hrrr", product="sfc", fxx=fxx, verbose=False)
+        hourly_datasets = H.xarray(SEARCH_ATMOSPHERE, overwrite=True)
+        df_step = pd.DataFrame(index=points_df["stid"])
+        for ds in hourly_datasets:
+            df_p = ds.herbie.pick_points(points_df[["latitude", "longitude", "stid"]], tree_name="hrrr").to_dataframe().set_index("point_stid")
+            for col in df_p.columns:
+                if col in ["t2m", "d2m", "u10", "v10", "gust", "tcc", "lcc", "mcc", "hcc"]:
+                    df_step[col] = df_p[col]
+        df_step["lead_hour"] = fxx
+        herbie_rows.append(df_step.reset_index().rename(columns={"stid": "point_stid"}))
+    df_herbie_day = pd.concat(herbie_rows, ignore_index=True)
+    return df_herbie_day
 
 def backfill_historical_solar(
     start_year: int = 2021,
@@ -411,6 +435,7 @@ def backfill_historical_solar(
           f"[{year}] Complete in {(time.time() - t_start_year)/60:.1f} min."
           f" Saved to {parquet_path}\n"
       )
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="HRRR Weather Data Loader")
   parser.add_argument(

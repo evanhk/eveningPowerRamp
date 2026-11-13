@@ -1,6 +1,29 @@
 import numpy as np
-import scipy.signal as signal
 import pandas as pd
+import ruptures as rpt
+import scipy.signal as signal
+
+
+def detect_pelt_changepoints(day_data, penalty_scale=10.0, min_size=6):
+    """Run baseline PELT changepoint detection on the afternoon net load curve."""
+    afternoon = day_data[
+        (day_data["interval_start_local"].dt.hour >= 12) & (day_data["interval_start_local"].dt.hour <= 22)
+    ].copy()
+    afternoon["net_load"] = afternoon["net_load"].interpolate(method="linear").bfill().ffill()
+    afternoon["net_load_smooth"] = signal.savgol_filter(
+        afternoon["net_load"].values, window_length=7, polyorder=2
+    )
+    y = afternoon["net_load_smooth"].values
+
+    diffs = np.diff(y)
+    mad = np.median(np.abs(diffs - np.median(diffs)))
+    sigma2 = (1.4826 * mad) ** 2
+    penalty = penalty_scale * sigma2 * np.log(len(y))
+
+    bkps = rpt.Pelt(model="l2", min_size=min_size).fit(y).predict(pen=penalty)
+    cp_indices = [idx - 1 for idx in bkps if idx < len(afternoon)]
+    cp_times = afternoon["interval_start_local"].iloc[cp_indices]
+    return cp_times, afternoon
 
 
 def extract_ramp_targets(day_data):
@@ -88,5 +111,5 @@ def extract_ramp_targets(day_data):
         "t_start_local": t_start,
         "t_peak_local": t_peak,
         "delta_mw_raw": delta_mw_raw,
-        "total_solar_capacitY_mw": total_solar_capacity_mw,
+        "total_solar_capacity_mw": total_solar_capacity_mw,
     }
