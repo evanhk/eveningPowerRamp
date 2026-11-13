@@ -7,7 +7,6 @@ import os
 import time
 import warnings
 import fsspec
-from herbie import Herbie
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -280,7 +279,7 @@ def _fetch_single_hour_herbie(
   """Worker: Fetch DSWRF & VBDSF for 1 forecast hour with retry logic."""
   for attempt in range(max_retries):
     try:
-      H = Herbie(
+      H = herbie.Herbie(
           noon_utc, model="hrrr", product="sfc", fxx=fxx, verbose=False
       )
       ds = H.xarray(":(?:DSWRF|VBDSF):surface:", overwrite=True)
@@ -357,7 +356,7 @@ def benchmark_herbie_day(date, points_df = STATION_POINTS) -> pd.DataFrame:
     )
     herbie_rows = []
     for fxx in range(1, 10):
-        H = Herbie(run_utc, model="hrrr", product="sfc", fxx=fxx, verbose=False)
+        H = herbie.Herbie(run_utc, model="hrrr", product="sfc", fxx=fxx, verbose=False)
         hourly_datasets = H.xarray(SEARCH_ATMOSPHERE, overwrite=True)
         df_step = pd.DataFrame(index=points_df["stid"])
         for ds in hourly_datasets:

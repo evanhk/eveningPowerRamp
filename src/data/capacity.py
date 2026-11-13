@@ -1,4 +1,3 @@
-from matplotlib.dates import MonthLocator
 import pandas as pd
 
 

@@ -73,7 +73,7 @@ notebooks/
 ├── 01_data_ingestion.ipynb          # Telemetry ingestion & HRRR S3 Zarr extraction
 ├── 02_ramp_segmentation.ipynb       # Savitzky-Golay filtering & 4D envelope extraction
 ├── 03_feature_engineering.ipynb     # Pre-noon weather/load features & collinearity pruning
-├── 04_model_benchmarking.ipynb      # Multi-model evaluation (Baselines, LightGBM, CatBoost)
+├── 04_model_benchmarking.ipynb      # Multi-tier evaluation (Linear Quantile, Symmetric & Chained LightGBM)
 └── 05_final_testing_2026.ipynb      # Out-of-sample holdout validation on 2026 data
 ```
 
@@ -91,7 +91,8 @@ The models were evaluated against an untouched **2026 out-of-sample holdout set*
 | Target | Metric | Tier 0 (Linear Quantile) | Tier 1 (Symmetric MSE) | Tier 1 (LightGBM Quantile) | Tier 2 (Chained Quantile) |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **$t_{\text{start}}$** | Pinball Loss | 12.82 | 13.65 | 7.40 | **7.40** |
-| | Deficit (Minutes late) | 73.65 | 12.64 | 34.99 | 34.99 |
+| | Late Warning Deficit (Minutes late) | 4.30 | 13.83 | **2.53** | **2.53** |
+| | Early Warning Cushion (Minutes early) | 73.65 | 12.64 | 34.99 | 34.99 |
 | **$\Delta \text{MW}_{\text{norm}}$** | Pinball Loss | 0.0419 | 0.0203 | **0.0173** | 0.0176 |
 | | Deficit Severity | 0.0011 | 0.0181 | 0.0033 | **0.0031** |
 | | MAPE | 61.7% | 10.5% | 23.0% | 23.4% |
@@ -112,8 +113,8 @@ The models were evaluated against an untouched **2026 out-of-sample holdout set*
 Clone the repository and install dependencies in an isolated virtual environment:
 
 ```powershell
-git clone https://github.com/<your-username>/energy-systems-analysis.git
-cd energy-systems-analysis
+git clone https://github.com/evanhk/eveningPowerRamp.git
+cd eveningPowerRamp
 python -m venv .venv
 .venv\Scripts\activate
 pip install -e .
